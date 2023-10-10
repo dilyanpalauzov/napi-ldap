@@ -194,8 +194,10 @@ sasl_bind (napi_env env, napi_callback_info info)
 
   if (defaults->sec_props)
     {
+      printf("sasl.c sasl_bind() 1\n");
       res = ldap_set_option (ldap_cnx->ld, LDAP_OPT_X_SASL_SECPROPS,
 			     defaults->sec_props);
+      printf("sasl.c sasl_bind() 2\n");
       if (res != LDAP_SUCCESS)
 	{
 	  napi_throw_error (env, NULL, ldap_err2string (res));
@@ -205,12 +207,14 @@ sasl_bind (napi_env env, napi_callback_info info)
 
   ldap_cnx->sasl_mechanism = NULL;
 
+  printf("sasl.c sasl_bind() 3\n");
   res = ldap_sasl_interactive_bind (ldap_cnx->ld, NULL, defaults->mechanism,
 				    sctrlsp, NULL, LDAP_SASL_QUIET,
 				    sasl_callback, defaults,
 				    message, &ldap_cnx->sasl_mechanism,
 				    &msgid);
 
+  printf("sasl.c sasl_bind() 4\n");
   if (res != LDAP_SASL_BIND_IN_PROGRESS && res != LDAP_SUCCESS)
     {
       napi_throw_error (env, NULL, ldap_err2string (res));
@@ -230,15 +234,18 @@ sasl_bind_next (LDAPMessage ** message, struct ldap_cnx *ldap_cnx)
   int msgid;
   while (true)
     {
+  printf("sasl.c sasl_bind() 5\n");
       res = ldap_sasl_interactive_bind (ldap_cnx->ld, NULL, NULL,
 					sctrlsp, NULL, LDAP_SASL_QUIET,
 					NULL, NULL, *message,
 					&ldap_cnx->sasl_mechanism, &msgid);
 
+  printf("sasl.c sasl_bind() 6\n");
       if (res != LDAP_SASL_BIND_IN_PROGRESS)
 	break;
 
       ldap_msgfree (*message);
+  printf("sasl.c sasl_bind() 7\n");
 
       if (ldap_result (ldap_cnx->ld, msgid, LDAP_MSG_ALL, NULL, message) ==
 	  -1)
@@ -248,5 +255,6 @@ sasl_bind_next (LDAPMessage ** message, struct ldap_cnx *ldap_cnx)
 	}
     }
 
+  printf("sasl.c sasl_bind() 8\n");
   return res;
 }
