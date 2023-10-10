@@ -59,6 +59,7 @@ rethrow_on_exception (napi_env env, napi_status status)
 {
   napi_value exception;
 
+  printf("rethrow_on_exception 1\n");
   if (status == napi_pending_exception)
     {
       status = napi_get_and_clear_last_exception (env, &exception);
@@ -74,6 +75,7 @@ rethrow_on_exception (napi_env env, napi_status status)
 static napi_value
 cnx_check_tls (napi_env env, napi_callback_info info)
 {
+  printf("cnx_check_tls 1\n");
   struct ldap_cnx *ldap_cnx;
   int is_tls;
   napi_value this, ret;
@@ -254,6 +256,7 @@ cnx_search (napi_env env, napi_callback_info info)
 static napi_value
 cnx_close (napi_env env, napi_callback_info info)
 {
+  printf("cnx_close 1\n");
   napi_status status;
   napi_value this, js_ret;
   size_t argc = 0;
@@ -277,6 +280,7 @@ cnx_close (napi_env env, napi_callback_info info)
 static napi_value
 cnx_bind (napi_env env, napi_callback_info info)
 {
+  printf("cnx_bind 1\n");
   napi_status status;
   size_t argc = 2, size;
   napi_value this, argv[argc], js_ret;
@@ -338,7 +342,9 @@ cnx_bind (napi_env env, napi_callback_info info)
   status = napi_unwrap (env, this, (void **) &ldap_cnx);
   assert (status == napi_ok);
 
+  printf("cnx.c:cnx_bind() 2 next is ldap_simple_bind\n");
   ret = ldap_simple_bind (ldap_cnx->ld, dn, password);
+  printf("cnx.c:cnx_bind() 3\n");
   status = napi_create_int32 (env, ret, &js_ret);
   assert (status == napi_ok);
   return js_ret;
@@ -1069,6 +1075,7 @@ handle_result_events (napi_env env, struct ldap_cnx *ldap_cnx,
 static void
 cnx_event (uv_poll_t * handle, int _status, int events)
 {
+  printf("cnx_event() 1\n");
   char *err_str = NULL;
   struct ldap_cnx *ldap_cnx = (struct ldap_cnx *) handle->data;
   LDAPMessage *message = NULL;
@@ -1115,10 +1122,12 @@ cnx_event (uv_poll_t * handle, int _status, int events)
   switch (msgtype = ldap_msgtype (message))
     {
     case LDAP_RES_SEARCH_REFERENCE:
+  printf("cnx_event() RES_SEARCH_REFERENCE\n");
       break;
     case LDAP_RES_SEARCH_ENTRY:
     case LDAP_RES_SEARCH_RESULT:
       {
+  printf("cnx_event() RES_SEARCH_ENTRY/RESULT\n");
 	result_container = handle_result_events (env, ldap_cnx, message);
 
 	msgid = ldap_msgid (message);
@@ -1136,6 +1145,7 @@ cnx_event (uv_poll_t * handle, int _status, int events)
       }
     case LDAP_RES_BIND:
       {
+  printf("cnx_event() RES_BIND\n");
 	msgid = ldap_msgid (message);
 
 	if (err == LDAP_SASL_BIND_IN_PROGRESS)
@@ -1166,6 +1176,7 @@ cnx_event (uv_poll_t * handle, int _status, int events)
     case LDAP_RES_DELETE:
     case LDAP_RES_EXTENDED:
       {
+  printf("cnx_event() RES_SEARCH_MODIFY/MODDN/ADD/DELETE/EXTENDED\n");
 	status = napi_create_int32 (env, ldap_msgid (message), &js_message);
 	assert (status == napi_ok);
 	argv[0] = errparam;
@@ -1186,6 +1197,7 @@ cnx_event (uv_poll_t * handle, int _status, int events)
 
   status = napi_close_handle_scope (ldap_cnx->env, scope);
   assert (status == napi_ok);
+  printf("cnx_event() LAST\n");
 }
 
 static int
@@ -1223,10 +1235,12 @@ on_connect (LDAP * ld, Sockbuf * sb,
 				     ldap_cnx->this_ref, &this);
   assert (status == napi_ok);
 
+  printf("cnx.c:on_connect() 1\n");
   status = napi_make_callback (ldap_cnx->env, ldap_cnx->async_context, this,
 			       reconnect_callback, 0, NULL, NULL);
   rethrow_on_exception (ldap_cnx->env, status);
 
+  printf("cnx.c:on_connect() 2\n");
   return LDAP_SUCCESS;
 }
 
@@ -1478,6 +1492,7 @@ cnx_constructor (napi_env env, napi_callback_info info)
   if (ca != NULL)
     free (ca);
 
+  printf("cnx.c:cnx_ctor() LAST\n");
   return this;
 }
 
